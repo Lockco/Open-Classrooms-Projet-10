@@ -36,7 +36,7 @@ def signup(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obtain_token(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -69,7 +69,6 @@ def login_user(request):
         user = authenticate(username=username, password=password)
 
         if user:
-            login(request, user)
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -86,3 +85,12 @@ def login_user(request):
             'message': 'Veuillez vous connecter',
             'content': {'username': '', 'password': ''}
         })
+
+        
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def test_authenticated(request):
+    """
+    Endpoint pour tester si un utilisateur est connecté.
+    """
+    return Response({"message": "Vous êtes connecté !"})

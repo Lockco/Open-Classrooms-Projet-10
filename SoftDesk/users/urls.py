@@ -1,7 +1,7 @@
 from django.urls import path, include, re_path
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
-from .views import UserViewSet, signup, obtain_token, login_user
+from .views import UserViewSet, signup, obtain_token, login_user,test_authenticated
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -24,6 +24,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework_V1')),
     path('signup/', signup, name='signup'),
     path('login/', login_user, name='login'),
+    path('test/', test_authenticated, name='test_authenticated'),
     # path('obtain_token/', obtain_auth_token, name='api_token_auth'),
     path('obtain_token/', obtain_token, name='obtain_token'),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
