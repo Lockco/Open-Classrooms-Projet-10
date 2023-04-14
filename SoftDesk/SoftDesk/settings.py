@@ -42,13 +42,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    'rest_framework_simplejwt.token_blacklist',
-    "rest_framework.authtoken",
+    'rest_framework_simplejwt',
     "rest_framework_swagger",
     "drf_yasg",
     "crispy_forms",
     "projects",
-    "users",
+    "users", 
 ]
 
 MIDDLEWARE = [
@@ -136,34 +135,53 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configuration de la journalisation
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    }
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'root': {
+#         'handlers': ['console'],
+#         'level': 'INFO',
+#     }
+# }
 
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework_simplejwt.authentication.JWTAuthentication', 'rest_framework.authentication.TokenAuthentication', 'rest_framework.authentication.SessionAuthentication',
+#     ],
+#     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',  
+
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAdminUser'
+#    ),
+# }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 100,
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=480),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
 # Simple JWT settings
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('JWT',),
-    'USER_ID_CLAIM': 'user_id',
-    'TOKEN_BLACKLIST_ENABLED': True,
-    'TOKEN_BLACKLIST_MODEL': 'rest_framework_simplejwt.token_blacklist.models.BlacklistedToken',
-}
+# SIMPLE_JWT = {
+#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+#     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+#     'AUTH_HEADER_TYPES': ('JWT',),
+#     'USER_ID_CLAIM': 'user_id',
+#     'TOKEN_BLACKLIST_ENABLED': True,
+#     'TOKEN_BLACKLIST_MODEL': 'rest_framework_simplejwt.token_blacklist.models.BlacklistedToken',
+# }

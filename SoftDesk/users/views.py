@@ -21,7 +21,7 @@ class UserCreate(generics.CreateAPIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows users to be viewed or edited.
+    Vue permet aux utilisateurs d'être affichés ou modifiés.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
