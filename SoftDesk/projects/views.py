@@ -1,15 +1,28 @@
 from django.contrib.auth import get_user_model
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Project
-from .serializers import ProjectSerializer
+from .models import Project, Contributor
+from .serializers import ProjectSerializer, ContributorSerializer
 from users.models import User
 from users.serializers import UserSerializer
+from .permissions import IsProjectAuthorOrContributor
 
 User = get_user_model()
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class ProjectCreateView(generics.CreateAPIView):
@@ -52,7 +65,7 @@ class ProjectUpdateView(generics.UpdateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     allowed_methods = ['PUT', 'PATCH', 'OPTIONS']
 
     def perform_update(self, serializer):
@@ -76,34 +89,38 @@ class ProjectDeleteView(generics.DestroyAPIView):
 
 class ProjectAddUserView(generics.CreateAPIView):
     """
-    Vue pour ajouter un utilisateur (collaborateur) à un projet.
+    Vue pour ajouter un utilisateur (collaborateur) à un projet existant.
     """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
+    serializer_class = ContributorSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectAuthorOrContributor]
 
-    def update(self, request, *args, **kwargs):
-        project = self.get_object()
+    def create(self, request, *args, **kwargs):
+        project_id = request.data.get('id')
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response(
+                {'error': 'Project not found.'}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if the user is already a collaborator
         try:
             user = User.objects.get(username=request.data['username'])
         except User.DoesNotExist:
             return Response(
                 {'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND
             )
-        if project.author != request.user and user != request.user:
-            return Response(
-                {'error': 'You do not have permission to add this user to the project.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        if user in project.users.all():
+        if project.contributors.filter(user=user).exists():
             return Response(
                 {'error': 'This user is already a collaborator on this project.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        project.users.add(user)
-        project.save()
-        serializer = self.serializer_class(project)
+
+        # Create a new contributor object and save it to the database
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)
 
 
@@ -120,3 +137,4 @@ class ProjectUsersListView(generics.ListAPIView):
         project = get_object_or_404(Project, id=project_id)
         users_ids = project.contributors.values_list('user_id', flat=True)
         return User.objects.filter(id__in=users_ids)
+

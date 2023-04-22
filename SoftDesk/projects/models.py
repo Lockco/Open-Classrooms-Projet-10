@@ -1,6 +1,6 @@
 from django.db import models
-
 from users.models import User
+
 
 # Create your models here.
 class Project(models.Model):
@@ -22,7 +22,8 @@ class Project(models.Model):
 	class Meta:
 		verbose_name = 'Projet'
 		verbose_name_plural = 'Tous les projets'
-	
+
+
 class Issue(models.Model):
 	PRIORITY_CHOICES = (
 		('low', 'Low'),
@@ -54,7 +55,8 @@ class Issue(models.Model):
 	class Meta:
 		verbose_name = 'Problème'
 		verbose_name_plural = 'Tous les problèmes'
-		
+
+
 class Comment(models.Model):
 	description = models.CharField(max_length=500)
 	author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -67,7 +69,8 @@ class Comment(models.Model):
 
 	def __str__(self):
 		return self.description
-	
+
+
 class Contributor(models.Model):
 	PERMISSION_CHOICES = (
 		('read', 'Read'),
