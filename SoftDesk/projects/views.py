@@ -25,68 +25,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class ProjectCreateView(generics.CreateAPIView):
-    """
-    Vue pour créer un nouveau projet.
-    """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-
-class ProjectListView(generics.ListAPIView):
-    """
-    Récupère la liste de tous les projets rattachés à l'utilisateur connecté
-    """
-    serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Project.objects.filter(author=self.request.user)
-
-
-class ProjectDetail(generics.RetrieveAPIView):
-    """
-    Récupère les détails d'un projet par son id.
-    """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class ProjectUpdateView(generics.UpdateAPIView):
-    """
-    Vue pour mettre à jour un projet.
-    """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    allowed_methods = ['PUT', 'PATCH', 'OPTIONS']
-
-    def perform_update(self, serializer):
-        serializer.save(author=self.request.user)
-
-
-class ProjectDeleteView(generics.DestroyAPIView):
-    """
-    Vue pour supprimer un projet.
-    """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response({"message": "Le projet a été supprimé avec succès."})
-
-
 class ProjectAddUserView(generics.CreateAPIView):
     """
     Vue pour ajouter un utilisateur (collaborateur) à un projet existant.
@@ -142,7 +80,7 @@ class ProjectUsersListView(generics.ListAPIView):
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsIssueAuthorOrReadOnly]
 
     def perform_create(self, serializer):
         project_id = self.kwargs['project_pk']  # Récupérer l'ID du projet depuis les données de la requête
@@ -153,40 +91,10 @@ class IssueViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class IssueListView(generics.ListAPIView):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Ajoutez les permissions appropriées
-
-
-class IssueDetailView(generics.RetrieveAPIView):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Ajoutez les permissions appropriées
-
-
-class IssueCreateView(generics.CreateAPIView):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Ajoutez les permissions appropriées
-
-
-class IssueUpdateView(generics.UpdateAPIView):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Ajoutez les permissions appropriées
-
-
-class IssueDeleteView(generics.DestroyAPIView):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Ajoutez les permissions appropriées
-
-
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsCommentAuthorOrReadOnly]
 
     def perform_create(self, serializer):
         issue_id = self.kwargs['issue_pk']
@@ -197,3 +105,21 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
+class ContributorViewSet(viewsets.ModelViewSet):
+    queryset = Contributor.objects.all()
+    serializer_class = ContributorSerializer
+    permission_classes = [permissions.IsAuthenticated, IsProjectAuthorOrContributor]
+
+    def create(self, request, *args, **kwargs):
+        data_copy = request.data.copy()
+        username = data_copy.get("user")
+        user = get_object_or_404(User, username=username)
+        data_copy["user"] = user.id
+        serializer = ContributorSerializer(data=data_copy)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)

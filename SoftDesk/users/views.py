@@ -1,4 +1,4 @@
-from rest_framework import status, viewsets, generics
+from rest_framework import viewsets, generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializers import UserSerializer, User
 import logging
